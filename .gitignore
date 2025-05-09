@@ -1,47 +1,5 @@
 .env
-24-Hour-for-ALL_ full scale for last 21 days.png
-24-Hour-for-ALL.png
-24-Hour-for-APB.png
-24-Hour-for-Starlink_ for last 21 days.png
-24-Hour-for-Starlink.png
-results-cli.csv
-s00_all-data.csv
-s21_hourly-data.csv
-Timeline-for-ALL_ full scale for last 21 days.png
-Timeline-for-ALL.png
-Timeline-for-APB.png
-Timeline-for-Starlink_ for last 21 days.png
-Timeline-for-Starlink.png
-.ipynb_checkpoints/readme_cron-checkpoint.txt
-.ipynb_checkpoints/readme-checkpoint.txt
-.ipynb_checkpoints/Repos2Cx6-checkpoint.ipynb
-.ipynb_checkpoints/speed-analyzer_1-checkpoint.ipynb
-.ipynb_checkpoints/speed-analyzer_csv_1-checkpoint.ipynb
-.ipynb_checkpoints/Untitled-checkpoint.ipynb
-archive/j.txt
-archive/jp.txt
-archive/o2.txt
-archive/package-lock.json
-archive/readme_cron.txt
-archive/results-hr.txt
-archive/results-jr.txt
-archive/results-mr.txt
-archive/results.csv
-archive/speed-analyzer_1-Copy1.py
-archive/speed-analyzer_1.ipynb
-archive/speed-analyzer_1.py
-archive/speed-analyzer_csv_1 (1).ipynb
-archive/speed-analyzer_csv_1 copy.ipynb
-archive/speed-json.sh
-archive/speedtest-cli
-archive/speedtest.sh
-archive/speedtrial.sh
-archive/node_modules/.bin/speed-cloudflare-cli
-archive/node_modules/speed-cloudflare-cli/.editorconfig
-archive/node_modules/speed-cloudflare-cli/.eslintrc.json
-archive/node_modules/speed-cloudflare-cli/chalk.js
-archive/node_modules/speed-cloudflare-cli/cli.js
-archive/node_modules/speed-cloudflare-cli/LICENSE
-archive/node_modules/speed-cloudflare-cli/package.json
-archive/node_modules/speed-cloudflare-cli/README.md
-archive/node_modules/speed-cloudflare-cli/stats.js
+*.png 
+*.csv 
+.ipynb_checkpoints/*
+archive/*
