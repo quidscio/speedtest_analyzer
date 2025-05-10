@@ -123,7 +123,12 @@ s0['datetime'] = s0.date+' '+s0.time
 # Convert date format 2022-01-01 23:59:59 
 s0['datetime'] = pd.to_datetime(s0.datetime, format="%Y-%m-%d %H:%M:%S")
 # Case B: server timestamp (converting from UTC to Eastern time) 
-s0['dt'] = pd.to_datetime(s0['Timestamp'], format='ISO8601', utc=True)
+# Update for newer speedtest-cli version 
+s0['dt'] = pd.to_datetime(
+    s0['Timestamp'],
+    utc=True,
+    errors='coerce'      # turns unparsable (including NaN) into pd.NaT
+)
 s0['datetime'] = s0['dt'].dt.tz_convert('America/New_York')
 if False: debugCsv(s0, "s0")
 
