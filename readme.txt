@@ -17,3 +17,5 @@ results-cli.csv                                                                 
   * WSL venv312
   * Lx RandP3 
   * Windows venv312 
+* One-line exec in WSL: 
+  source ../venv312/bin/activate && python ./speed-analyzer_csv_1.py 
