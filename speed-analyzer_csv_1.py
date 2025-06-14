@@ -122,10 +122,24 @@ s0 = pd.concat(pd.read_csv(file, low_memory=False) for file in [input_file])
 s0['datetime'] = s0.date+' '+s0.time
 # Convert date format 2022-01-01 23:59:59 
 s0['datetime'] = pd.to_datetime(s0.datetime, format="%Y-%m-%d %H:%M:%S")
+
 # Case B: server timestamp (converting from UTC to Eastern time) 
 # Update for newer speedtest-cli version 
+def clean_timestamp(ts):
+    """Clean timestamp by removing trailing Z if timezone offset is present"""
+    if pd.isna(ts):
+        return ts
+    ts_str = str(ts)
+    # If timestamp has timezone offset (+XX:XX or -XX:XX) and ends with Z, remove the Z
+    if ('+' in ts_str or ts_str.count('-') > 2) and ts_str.endswith('Z'):
+        return ts_str[:-1]
+    return ts_str
+
+# Clean the timestamps before parsing
+s0['Timestamp_clean'] = s0['Timestamp'].apply(clean_timestamp)
+
 s0['dt'] = pd.to_datetime(
-    s0['Timestamp'],
+    s0['Timestamp_clean'],
     utc=True,
     errors='coerce'      # turns unparsable (including NaN) into pd.NaT
 )
@@ -133,7 +147,7 @@ s0['datetime'] = s0['dt'].dt.tz_convert('America/New_York')
 if False: debugCsv(s0, "s0")
 
 # s00 is our effective starting frame 
-s00 = s0.drop(columns=['date','time','Server ID', "Sponsor", "Server Name", "Timestamp", "Distance", "Share", "dt"])
+s00 = s0.drop(columns=['date','time','Server ID', "Sponsor", "Server Name", "Timestamp", "Timestamp_clean", "Distance", "Share", "dt"])
 s00['Download']=s00['Download']/1000000
 s00['Upload']  =s00['Upload']/  1000000
 if False: debugCsv(s00, "s00")
@@ -183,7 +197,7 @@ s00.loc[(s00['isp'] == 'Starlink') & (s00['datetime'] < '2024-01-01'), 'Download
 if False: debugCsv(s00, "s00a")
 if True: s00.to_csv('s00_all-data.csv', index=False)
 
-s00.head(2)
+s00.tail(2)
 
 # %% [markdown]
 # # Create hourly samples frame for plotting
