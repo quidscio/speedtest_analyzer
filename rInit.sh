@@ -19,3 +19,4 @@ source /mnt/c/q/arc/projects/venv312/bin/activate || exit 1
 
 # Print completion message
 echo "Setup complete!"
+echo " Now execute: python speedtest-analyzer.py" 

@@ -1,12 +1,19 @@
-# %%
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# %% [markdown]
+
 # # Speed-analyzer
 # Ingest results-cli.csv from speedtest.net cli cron job and display an hourly speed based on the three available samples per hour
 
-# %%
+# In[2]:
+
+
 import pandas as pd
 import numpy as np
 import matplotlib as mpl
@@ -61,11 +68,13 @@ def debugCsv(tf, tfname):
 
 plt.rcParams.update({'figure.max_open_warning': 0})
 
-# %% [markdown]
+
 # # Read list of csvs into origin frame, s0
 # ## Minimize to raw data frame w/only info we need, s00
 
-# %%
+# In[3]:
+
+
 print(f"== SpeedTest_Analyzer ==")
 # ─── CONFIG & BOILERPLATE ─────────────────────────────────────────────
 env_path = Path('.') / '.env'
@@ -113,7 +122,9 @@ subprocess.run(['scp', remote_spec, '.'], check=True)
 print(f".... Retrieved {input_file!r} from {remote_user}@{remote_host} to current directory")
 
 
-# %%
+# In[4]:
+
+
 # s0 is original frame w/as little change as possible 
 s0 = pd.concat(pd.read_csv(file, low_memory=False) for file in [input_file])
 
@@ -154,12 +165,14 @@ if False: debugCsv(s00, "s00")
 s00.head(25)
 print(f".. Loading {len(s00)/3/24} days of data, {len(s00)} samples")
 
-# %% [markdown]
+
 # # Identify ISP according to IP Address to frame S1
 # * ISPs from list below include T-Mobile, Verizon, APB, Starlink 
 # * Script aborts if an unknown IP address range is encountered 
 
-# %%
+# In[5]:
+
+
 # Classify IPs by current ISP
 s00.loc[s00['IP Address'].isna()==True,'IP Address']="None"      # str function dies on null values
 s00['isp']="UNKNOWN"                                             # everyone is unknown unless proven otherwise
@@ -167,16 +180,20 @@ s00.loc[s00['IP Address'].str.startswith('172'),'isp']='T-Mobile'
 s00.loc[s00['IP Address'].str.startswith('174'),'isp']='Verizon'
 s00.loc[s00['IP Address'].str.startswith('64'),'isp']='APB'
 s00.loc[s00['IP Address'].str.startswith('184'),'isp']='APB'
+s00.loc[s00['IP Address'].str.startswith('74.244.63'),'isp']='APB-COX'      # Unsure if APB is with Cox now 
 s00.loc[s00['IP Address'].str.startswith('98'),'isp']='Starlink'
 s00.loc[s00['IP Address'].str.startswith('129'),'isp']='Starlink'
+s00.loc[s00['IP Address'].str.startswith('170.203.215'),'isp']='Starlink'
 s00.loc[s00['IP Address'].str.startswith('143.105'),'isp']='Starlink'
 s00.loc[s00['IP Address'].str.startswith('216.234'),'isp']='Starlink'     
 # Display UNKNOWN count which should be 0 
 # UKNOWN with a valid IP address indicates a new IP space to classify, this must be zero 
 unknownisp_count = s00['isp'].loc[(s00['isp'] == "UNKNOWN") & (s00['IP Address']!="None") ].count()
+s00_unknown = s00.loc[(s00['isp'] == "UNKNOWN") & (s00['IP Address']!="None")]
 if unknownisp_count !=0:
     print(f"** Unknown ISPs detected with {unknownisp_count} entries")
     print(f"** ** IPs:\n{s00['IP Address'].loc[(s00['isp'] == 'UNKNOWN') & (s00['IP Address']!='None') ]}")
+    s00_unknown.to_csv('s00_unknown-isp.csv', index=False) 
 # UKNOWN without a valid IP address means no data was returned and is likely a test server or network outage 
 nodata_count = s00['isp'].loc[(s00['isp'] == "UNKNOWN") & (s00['IP Address']=="None") ].count()
 #
@@ -199,10 +216,12 @@ if True: s00.to_csv('s00_all-data.csv', index=False)
 
 s00.tail(2)
 
-# %% [markdown]
+
 # # Create hourly samples frame for plotting
 
-# %%
+# In[6]:
+
+
 def ispx(isps): 
     """Mark sampled hours MIXED if more than one ISP active 
     """
@@ -216,10 +235,12 @@ def ispx(isps):
     else:
         return "MIXED"
 
-# %% [markdown]
+
 # # Graph as a timeline and then a 24 hour basis 
 
-# %%
+# In[7]:
+
+
 def plotTimeline(dt, **kwargs):
     #isp="ALL", save=False):
     """Plot dataframe's whole timeline from start to finish
@@ -335,7 +356,10 @@ if False:
     plot24(s21, recentDays=7, plotTitleExt=", last 7 days")
     #plot24(s21, "APB", True)
 
-# %%
+
+# In[8]:
+
+
 def q20(x): 
     '''Return the 20% quantile value for a column'''
     return x.quantile(0.2)
@@ -353,13 +377,19 @@ s21.sort_values('time', inplace=True)
 if True: s21.to_csv('s21_hourly-data.csv', index=False)
 s21.head(2)
 
-# %%
+
+# In[9]:
+
+
 if True: 
     # plot full timeline 
     plotTimeline(s21,save=True)
     plot24(s21, save=True)
 
-# %%
+
+# In[10]:
+
+
 # manually plot full timeline by each ISP
 if True:
     plotTimeline(s21,isp="APB",save=True)
@@ -380,21 +410,25 @@ if False:
         plotTimeline(s21,isp=isp, save=True)
         plot24(s21, isp=isp, save=True)
 
-# %% [markdown]
+
 # # Prepare a special view for T-Mobile 
 # * Limit axes to Industry bounds of 25/3 for "broadband" 
 # * This was interesting when T-Mobile was claiming $50 unlimited broadband via cellular. It wasn't even close. 
 
-# %%
+# In[11]:
+
+
 if False:
     plotTimeline(s21,isp="T-Mobile",save=True, ymin=-5, ymax=15, plotTitleExt=", scaled to broadband range -5 to 15 Mbps")
     plot24(s21, isp="T-Mobile", save=True, ymin=-5, ymax=15, plotTitleExt=", scaled to broadband range -5 to 15 Mbps")
 
-# %% [markdown]
+
 # # APB long term and last N days
 # * All Points Broadband (wireless) is now a secondary provider. So...not interesting
 
-# %%
+# In[12]:
+
+
 if False:
     plotTimeline(s21,isp="APB",save=True, ymin=-10, ymax=30, plotTitleExt=", scaled to broadband range -10 to 30 Mbps")
     plot24(s21, isp="APB", save=True, ymin=-10, ymax=30, plotTitleExt=", scaled to broadband range -10 to 30 Mbps")
@@ -412,11 +446,12 @@ if False:
     plot24(s21, isp="APB", save=True, recentDays=45, plotTitleExt=", for last 45 days")
 
 
-# %% [markdown]
 # # Starlink
 # * Currently, primary provider 
 
-# %%
+# In[13]:
+
+
 if False:
     plotTimeline(s21,isp="Starlink",save=True, plotTitleExt=", all time")
     plot24(s21, isp="Starlink", save=True, plotTitleExt=", all time")
@@ -431,10 +466,11 @@ if False:
     plot24(s21, isp="Starlink", save=True, ymin=-10, ymax=30, plotTitleExt=", scaled to broadband range -10 to 30 Mbps")
 
 
-# %% [markdown]
 # # Last N days for all connections 
 
-# %%
+# In[14]:
+
+
 if False:
     plotTimeline(s21,save=True, ymin=-10, ymax=30, recentDays=14, plotTitleExt=", scaled to broadband range -10 to 30 Mbps for last 14 days")
     plot24(s21, save=True, ymin=-10, ymax=30, recentDays=14, plotTitleExt=", scaled to broadband range -10 to 30 Mbps for last 14 days")
@@ -442,5 +478,4 @@ if True:
     lastdays=21
     plotTimeline(s21,save=True, recentDays=lastdays, plotTitleExt=f", full scale for last {lastdays} days")
     plot24(s21, save=True, recentDays=lastdays, plotTitleExt=f", full scale for last {lastdays} days")
-
 
