@@ -425,6 +425,7 @@ if False:
 
 # # APB long term and last N days
 # * All Points Broadband (wireless) is now a secondary provider. So...not interesting
+# * APB becomes primary again with fiber! 
 
 # In[12]:
 
@@ -437,26 +438,32 @@ if False:
     plotTimeline(s21,isp="APB",save=True, ymin=-10, ymax=30, recentDays=7, plotTitleExt=", scaled to broadband range -10 to 30 Mbps for last 7 days")
     plot24(s21, isp="APB", save=True, ymin=-10, ymax=30, recentDays=7, plotTitleExt=", scaled to broadband range -10 to 30 Mbps for last 7 days")
     
-if False:
+if True:
     plotTimeline(s21,isp="APB",save=True, recentDays=7, plotTitleExt=", for last 7 days")
     plot24(s21, isp="APB", save=True, recentDays=7, plotTitleExt=", for last 7 days")
+    
+if True:
+    plotTimeline(s21,isp="APB",save=True, recentDays=21, plotTitleExt=", for last 21 days")
+    plot24(s21, isp="APB", save=True, recentDays=21, plotTitleExt=", for last 21 days")
     
 if False:
     plotTimeline(s21,isp="APB",save=True, recentDays=45, plotTitleExt=", for last 45 days")
     plot24(s21, isp="APB", save=True, recentDays=45, plotTitleExt=", for last 45 days")
 
 
+# # 
+
 # # Starlink
-# * Currently, primary provider 
+# * Now a short-term provider 
 
 # In[13]:
 
 
-if False:
+if True:
     plotTimeline(s21,isp="Starlink",save=True, plotTitleExt=", all time")
     plot24(s21, isp="Starlink", save=True, plotTitleExt=", all time")
     
-if True:
+if False:
     lastdays=21 
     plotTimeline(s21,isp="Starlink",save=True, recentDays=lastdays, plotTitleExt=f", for last {lastdays} days")
     plot24(s21, isp="Starlink", save=True, recentDays=lastdays, plotTitleExt=f", for last {lastdays} days")
@@ -474,8 +481,14 @@ if False:
 if False:
     plotTimeline(s21,save=True, ymin=-10, ymax=30, recentDays=14, plotTitleExt=", scaled to broadband range -10 to 30 Mbps for last 14 days")
     plot24(s21, save=True, ymin=-10, ymax=30, recentDays=14, plotTitleExt=", scaled to broadband range -10 to 30 Mbps for last 14 days")
-if True:
+if False:
     lastdays=21
     plotTimeline(s21,save=True, recentDays=lastdays, plotTitleExt=f", full scale for last {lastdays} days")
     plot24(s21, save=True, recentDays=lastdays, plotTitleExt=f", full scale for last {lastdays} days")
+
+
+# In[ ]:
+
+
+
 
