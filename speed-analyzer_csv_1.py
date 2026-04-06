@@ -20,6 +20,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.pyplot import figure 
+from matplotlib.colors import ListedColormap
 from mpl_toolkits.mplot3d import Axes3D
 import time
 import datetime    # hope this doesn't mess up time import 
@@ -241,6 +242,127 @@ def ispx(isps):
 # In[7]:
 
 
+# Selector for last N calendar days 
+def filter_recent_days(dt, recentDays):
+    if recentDays is None:
+        return dt.copy()
+    if recentDays <= 0:
+        raise ValueError("recentDays must be >= 1")
+
+    dt = dt.copy()
+    dt['datetime'] = pd.to_datetime(dt['datetime'])
+    cutoff = dt['datetime'].max().normalize() - pd.Timedelta(days=recentDays - 1)
+    return dt.loc[dt['datetime'] >= cutoff].copy()
+
+
+# In[8]:
+
+
+def plotTimeline(dt, **kwargs):
+    defaultKwargs = {
+        "isp": "ALL",
+        "save": False,
+        "plotTitleExt": "",
+        "ymin": None,
+        "ymax": None,
+        "recentDays": None,
+    }
+    kwargs = {**defaultKwargs, **kwargs}
+
+    isp = kwargs["isp"]
+    save = kwargs["save"]
+    plotTitleExt = kwargs["plotTitleExt"]
+    ymin = kwargs["ymin"]
+    ymax = kwargs["ymax"]
+    recentDays = kwargs["recentDays"]
+
+    dt = dt.copy()
+    dt["datetime"] = pd.to_datetime(dt["datetime"])
+
+    if isp != "ALL":
+        dt = dt.loc[dt["isp"] == isp].copy()
+
+    if recentDays is not None:
+        if recentDays <= 0:
+            raise ValueError("recentDays must be >= 1")
+        cutoff = dt["datetime"].max().normalize() - pd.Timedelta(days=recentDays - 1)
+        dt = dt.loc[dt["datetime"] >= cutoff].copy()
+
+    dt = dt.sort_values("datetime")
+
+    fig, ax1 = plt.subplots(1, 1, figsize=(16, 10))
+    ax1.set_title(f"Performance Timeline for ISP={isp}{plotTitleExt}")
+
+    ax1.plot(dt["datetime"], dt["Download"], linewidth=0, marker=".", markersize=3, color="red", label="Download")
+    ax1.plot(dt["datetime"], dt["Upload"], linewidth=0, marker=".", markersize=3, color="blue", label="Upload")
+    ax1.set_xlabel("Timeline by month, day, hour")
+    ax1.set_ylabel(f"Upload (negative values) and Download (positive values) Mbps for ISP={isp}")
+    ax1.legend(loc="upper left")
+    ax1.axhline(y=0, color="k")
+    ax1.grid()
+
+    if ymin is not None:
+        ax1.set_ylim(bottom=ymin)
+    if ymax is not None:
+        ax1.set_ylim(top=ymax)
+
+    ax1.tick_params(axis="x", labelrotation=45)
+
+    if save:
+        fig.savefig(f'Timeline-for-{isp}{plotTitleExt.replace(",","_")}.png')
+
+
+def plot24(dt, **kwargs):
+    defaultKwargs = {
+        "isp": "ALL",
+        "save": False,
+        "plotTitleExt": "",
+        "ymin": None,
+        "ymax": None,
+        "recentDays": None,
+    }
+    kwargs = {**defaultKwargs, **kwargs}
+
+    isp = kwargs["isp"]
+    save = kwargs["save"]
+    plotTitleExt = kwargs["plotTitleExt"]
+    ymin = kwargs["ymin"]
+    ymax = kwargs["ymax"]
+    recentDays = kwargs["recentDays"]
+
+    dt = dt.copy()
+    dt["datetime"] = pd.to_datetime(dt["datetime"])
+
+    if isp != "ALL":
+        dt = dt.loc[dt["isp"] == isp].copy()
+
+    if recentDays is not None:
+        if recentDays <= 0:
+            raise ValueError("recentDays must be >= 1")
+        cutoff = dt["datetime"].max().normalize() - pd.Timedelta(days=recentDays - 1)
+        dt = dt.loc[dt["datetime"] >= cutoff].copy()
+
+    fig, ax1 = plt.subplots(1, 1, figsize=(16, 10))
+    ax1.set_title(f"24-Hour Performance for ISP={isp}{plotTitleExt}")
+
+    ax1.plot(dt["time"], dt["Download"], linewidth=0, marker=".", markersize=3, color="red", label="Download")
+    ax1.plot(dt["time"], dt["Upload"], linewidth=0, marker=".", markersize=3, color="blue", label="Upload")
+    ax1.set_xlabel("24 Hour View from Midnight (0) to 11 PM (23)")
+    ax1.set_ylabel(f"Upload (negative values) and Download (positive values) Mbps for ISP={isp}")
+    ax1.legend(loc="upper left")
+    ax1.axhline(y=0, color="k")
+    ax1.grid()
+
+    if ymin is not None:
+        ax1.set_ylim(bottom=ymin)
+    if ymax is not None:
+        ax1.set_ylim(top=ymax)
+
+    ax1.tick_params(axis="x", labelrotation=45)
+
+    if save:
+        fig.savefig(f'24-Hour-for-{isp}{plotTitleExt.replace(",","_")}.png')
+
 def plotTimeline(dt, **kwargs):
     #isp="ALL", save=False):
     """Plot dataframe's whole timeline from start to finish
@@ -355,14 +477,20 @@ if False:
     plot24(s21, isp="APB", ymin=-5, ymax=20, plotTitleExt=", broadband values -5 to 20 Mbps", save=True)
     plot24(s21, recentDays=7, plotTitleExt=", last 7 days")
     #plot24(s21, "APB", True)
-
-
-# In[8]:
+# In[9]:
 
 
 def q20(x): 
     '''Return the 20% quantile value for a column'''
     return x.quantile(0.2)
+
+# timezone normalization 
+def to_local_naive(series):
+    return (
+        pd.to_datetime(series, utc=True)
+          .dt.tz_convert("America/New_York")
+          .dt.tz_localize(None)
+    )
 
 # form s21 as an hourly frame
 s21 = s00.set_index('datetime')
@@ -370,15 +498,18 @@ s21['down20'] = s21['Download']     # Does not really do what I hoped ####
 s21 = s21.resample('1h', origin='start_day').agg({'Ping':'mean','Download':'mean', 'Upload':'mean', 'down20': q20, 'isp':ispx})
 s21['Upload']=s21['Upload']*-1
 s21.reset_index(inplace=True)
+s21["datetime"] = to_local_naive(s21["datetime"])
 s21['time']=s21['datetime'].dt.time.astype(str)
-s21.sort_values('time', inplace=True)
+# 04.26.26 rmh Sort by date and time...not just time! 
+s21.sort_values('datetime', inplace=True)
+# s21.sort_values('time', inplace=True)
 #s21.set_index('time',inplace=True)
 
 if True: s21.to_csv('s21_hourly-data.csv', index=False)
 s21.head(2)
 
 
-# In[9]:
+# In[10]:
 
 
 if True: 
@@ -387,11 +518,11 @@ if True:
     plot24(s21, save=True)
 
 
-# In[10]:
+# In[11]:
 
 
 # manually plot full timeline by each ISP
-if True:
+if False:
     plotTimeline(s21,isp="APB",save=True)
     plot24(s21, isp="APB", save=True)
     plotTimeline(s21,isp="Starlink",save=True)
@@ -415,7 +546,7 @@ if False:
 # * Limit axes to Industry bounds of 25/3 for "broadband" 
 # * This was interesting when T-Mobile was claiming $50 unlimited broadband via cellular. It wasn't even close. 
 
-# In[11]:
+# In[12]:
 
 
 if False:
@@ -427,9 +558,10 @@ if False:
 # * All Points Broadband (wireless) is now a secondary provider. So...not interesting
 # * APB becomes primary again with fiber! 
 
-# In[12]:
+# In[13]:
 
 
+# Limit to lower broadband ranges 
 if False:
     plotTimeline(s21,isp="APB",save=True, ymin=-10, ymax=30, plotTitleExt=", scaled to broadband range -10 to 30 Mbps")
     plot24(s21, isp="APB", save=True, ymin=-10, ymax=30, plotTitleExt=", scaled to broadband range -10 to 30 Mbps")
@@ -437,18 +569,13 @@ if False:
 if False:
     plotTimeline(s21,isp="APB",save=True, ymin=-10, ymax=30, recentDays=7, plotTitleExt=", scaled to broadband range -10 to 30 Mbps for last 7 days")
     plot24(s21, isp="APB", save=True, ymin=-10, ymax=30, recentDays=7, plotTitleExt=", scaled to broadband range -10 to 30 Mbps for last 7 days")
-    
-if True:
-    plotTimeline(s21,isp="APB",save=True, recentDays=7, plotTitleExt=", for last 7 days")
-    plot24(s21, isp="APB", save=True, recentDays=7, plotTitleExt=", for last 7 days")
-    
-if True:
-    plotTimeline(s21,isp="APB",save=True, recentDays=21, plotTitleExt=", for last 21 days")
-    plot24(s21, isp="APB", save=True, recentDays=21, plotTitleExt=", for last 21 days")
-    
-if False:
-    plotTimeline(s21,isp="APB",save=True, recentDays=45, plotTitleExt=", for last 45 days")
-    plot24(s21, isp="APB", save=True, recentDays=45, plotTitleExt=", for last 45 days")
+
+# Full range plats
+
+if True: 
+    for lastdays in (7,14,21):
+        plotTimeline(s21,isp="APB",save=True, recentDays=lastdays, plotTitleExt=f", for last {lastdays} days")
+        plot24(s21, isp="APB", save=True, recentDays=lastdays, plotTitleExt=f", for last {lastdays} days")
 
 
 # # 
@@ -456,10 +583,10 @@ if False:
 # # Starlink
 # * Now a short-term provider 
 
-# In[13]:
+# In[14]:
 
 
-if True:
+if False:
     plotTimeline(s21,isp="Starlink",save=True, plotTitleExt=", all time")
     plot24(s21, isp="Starlink", save=True, plotTitleExt=", all time")
     
@@ -475,7 +602,7 @@ if False:
 
 # # Last N days for all connections 
 
-# In[14]:
+# In[15]:
 
 
 if False:
@@ -485,6 +612,109 @@ if False:
     lastdays=21
     plotTimeline(s21,save=True, recentDays=lastdays, plotTitleExt=f", full scale for last {lastdays} days")
     plot24(s21, save=True, recentDays=lastdays, plotTitleExt=f", full scale for last {lastdays} days")
+
+
+# # NODATA
+
+# In[16]:
+
+
+def plotNoDataHoursByDay(dt, **kwargs):
+    defaultKwargs = {
+        "save": False,
+        "plotTitleExt": "",
+        "recentDays": None,
+    }
+    kwargs = {**defaultKwargs, **kwargs}
+
+    save = kwargs["save"]
+    plotTitleExt = kwargs["plotTitleExt"]
+    recentDays = kwargs["recentDays"]
+
+    dt = dt.copy()
+    dt["datetime"] = to_local_naive(dt["datetime"])
+    dt["isp"] = dt["isp"].astype(str).str.strip()
+
+    if dt.empty:
+        raise ValueError("Input dataframe is empty")
+
+    end_day = dt["datetime"].max().normalize()
+    start_day = dt["datetime"].min().normalize()
+
+    if recentDays is not None:
+        if recentDays <= 0:
+            raise ValueError("recentDays must be >= 1")
+        start_day = end_day - pd.Timedelta(days=recentDays - 1)
+
+    window = dt.loc[
+        (dt["datetime"] >= start_day) &
+        (dt["datetime"] < end_day + pd.Timedelta(days=1))
+    ].copy()
+
+    nd = window.loc[window["isp"].eq("NODATA")].copy()
+
+    if not nd.empty:
+        nd["day"] = nd["datetime"].dt.normalize()
+        nd["hour"] = nd["datetime"].dt.hour
+
+        frame = (
+            nd.groupby(["day", "hour"])
+              .size()
+              .unstack(fill_value=0)
+        )
+        frame = (frame > 0).astype(int)
+    else:
+        frame = pd.DataFrame()
+
+    all_days = pd.date_range(start=start_day, end=end_day, freq="D")
+    frame = frame.reindex(index=all_days, fill_value=0)
+    frame = frame.reindex(columns=range(24), fill_value=0)
+
+    fig, ax = plt.subplots(1, 1, figsize=(16, max(4, len(frame) * 0.35)))
+    
+    cmap = ListedColormap(["lightgray", "yellow"])
+    
+    ax.imshow(
+        frame.values,
+        aspect="auto",
+        interpolation="nearest",
+        origin="upper",
+        vmin=0,
+        vmax=1,
+        cmap=cmap,
+    )
+    
+    ax.set_title(f"NODATA by Hour by Day{plotTitleExt}")
+    ax.set_xlabel("Hour of day")
+    ax.set_ylabel("Day")
+    ax.set_xticks(range(24))
+    ax.set_xticklabels(range(24))
+    ax.set_yticks(range(len(frame.index)))
+    ax.set_yticklabels([d.strftime("%Y-%m-%d") for d in frame.index])
+    
+    ax.set_xticks(np.arange(-0.5, len(frame.columns), 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, len(frame.index), 1), minor=True)
+    ax.grid(which="minor", color="white", linestyle="-", linewidth=0.5)
+    ax.tick_params(which="minor", bottom=False, left=False)
+    
+    plt.tight_layout()
+
+    if save:
+        fig.savefig(f'NoDataHourByDay{plotTitleExt.replace(",","_")}.png')
+
+    return frame, nd
+
+
+# In[17]:
+
+
+for lastdays in (21,48):
+    plotNoDataHoursByDay(
+        s21,
+        save=True,
+        recentDays=lastdays,
+        plotTitleExt=f", last {lastdays} days"
+    )
 
 
 # In[ ]:
