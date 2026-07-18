@@ -186,7 +186,9 @@ s00.loc[s00['IP Address'].str.startswith('98'),'isp']='Starlink'
 s00.loc[s00['IP Address'].str.startswith('129'),'isp']='Starlink'
 s00.loc[s00['IP Address'].str.startswith('170.203.215'),'isp']='Starlink'
 s00.loc[s00['IP Address'].str.startswith('143.105'),'isp']='Starlink'
-s00.loc[s00['IP Address'].str.startswith('216.234'),'isp']='Starlink'     
+s00.loc[s00['IP Address'].str.startswith('216.234'),'isp']='Starlink'    
+s00.loc[s00['IP Address'].str.startswith('24.106.248'),'isp']='Express'    
+s00.loc[s00['IP Address'].str.startswith('82.26.162'),'isp']='Express'    
 # Display UNKNOWN count which should be 0 
 # UKNOWN with a valid IP address indicates a new IP space to classify, this must be zero 
 unknownisp_count = s00['isp'].loc[(s00['isp'] == "UNKNOWN") & (s00['IP Address']!="None") ].count()

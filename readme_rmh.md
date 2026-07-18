@@ -1,4 +1,8 @@
 # Speedtesting 
+* 07.18.26 rmh
+  * Upgrade Anaconda 2.7.1 from 2.7.0 
+    * Unable to open 
+
 * 05.09.25 rmh
   * Exec as: python ./speed-analyzer_csv_1.py or as notebook 
     * Install requirements.txt 
